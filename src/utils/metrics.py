@@ -69,7 +69,7 @@ def convergence_pinn_epochs(params, f,N_fd = 1000, u_ref=None, epoch_list=None):
     XX = torch.linspace(params.X_min, params.X_max, N_fd)
     YY = torch.linspace(params.Y_min, params.Y_max, N_fd)
     XX_grid, YY_grid = torch.meshgrid(XX, YY, indexing='ij')
-    _, mask_PDE, _ = make_masks(XX_grid, YY_grid, params)
+    _, mask_PDE, _ = make_masks(XX_grid, YY_grid, params, xp = torch)
     XY = torch.stack([XX_grid.flatten(), YY_grid.flatten()], dim=1)
     
     if mode == "analytique":
@@ -126,7 +126,7 @@ def sensibilité_pinn(params,hyper_params, f, max_epochs  = 10000, u_ref = None,
     XX = torch.linspace(params.X_min, params.X_max, N_fd)
     YY = torch.linspace(params.Y_min, params.Y_max, N_fd)
     XX_grid, YY_grid = torch.meshgrid(XX, YY, indexing='ij')
-    _, mask_PDE, _ = make_masks(XX_grid, YY_grid, params)
+    _, mask_PDE, _ = make_masks(XX_grid, YY_grid, params, xp = torch)
     XY = torch.stack([XX_grid.flatten(), YY_grid.flatten()], dim=1)
     
     if mode == "analytique":
