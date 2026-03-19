@@ -89,6 +89,25 @@ def alpha(ux, uy ):
     norm = np.where(norm == 0, 1, norm)
     return ux/norm, uy/norm
 
+def d_u_apha(ux,uy, Nx, Ny, params): 
+    """
+    Calcul de la dérivée en u de alpha pour la Jacobienne de la méthode de Newton Semi-Smooth
+    """
+    fd_ops = build_fd_operators(Nx, Ny, params)
+    Dx, Dy = fd_ops['Dx'], fd_ops['Dy']
+    norm = np.sqrt(ux**2 + uy**2)
+    norm = np.where(norm == 0, 1.0, norm)
+
+    inv_norm  = sparse.diags(1.0 / norm)           
+    ux_n3     = sparse.diags(ux / norm**3)        
+    uy_n3     = sparse.diags(uy / norm**3)        
+
+    grad_proj = sparse.diags(ux) @ Dx + sparse.diags(uy) @ Dy
+    dax_dU = inv_norm @ Dx - ux_n3 @ grad_proj  
+    day_dU = inv_norm @ Dy - uy_n3 @ grad_proj 
+    return dax_dU, day_dU
+
+
 def beta(ux, uy): 
     """
     Signe du gradient : (sign(ux), sign(uy)).

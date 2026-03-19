@@ -67,7 +67,6 @@ def Solveur_Zermelo (N, f,params, tol = 1e-6, max_iter = 100):
     xx, yy =np.linspace(params.X_min, params.X_max, N+1), np.linspace(params.Y_min, params.Y_max, N+1 )
     XX, YY = np.meshgrid(xx, yy)
     mask_in, mask_pde, mask_out = make_masks(XX, YY, params)
-
     U_vec = np.zeros((N+1)*(N+1))
     ##initialiser les bords : 
     mask_out = mask_out.flatten()
@@ -76,10 +75,17 @@ def Solveur_Zermelo (N, f,params, tol = 1e-6, max_iter = 100):
 
     for n in range(max_iter):
         A,B = build_system( XX, YY,U_vec, N,f, params, ops_dict)
-        U_next = lng.spsolve(A,B)
+        ux = ops_dict['Dx'] @ U_vec
+        uy = ops_dict['Dy'] @ U_vec
+        F = A@U_vec - B
+
+        dax_dU, day_dU = ops.d_u_alpha(ux, uy, N, N, params)
+
+        J = A + params.vs * ( sparse.diags(ux) @ dax_dU + sparse.diags(uy) @ day_dU )
+        U_next = lng.spsolve(J,-F)
 
         err = np.max(np.abs(U_next - U_vec))
-        U_vec = U_next
+        U_vec += U_next
         if err < tol: 
             break
     U = U_vec.reshape(N+1, N+1)
