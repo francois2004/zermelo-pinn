@@ -32,14 +32,18 @@ def sample_boundary(N, params):
             torch.tensor(xy_outer, dtype=torch.float32))
 
 
-def train(model, params, f, N_colloc = 200, N_bord = 50, n_epochs = 1000, lam = 5., lr = 1e-3): 
+def train(model, params, f, N_colloc = 10000, N_bord = 1000, n_epochs = 1000, lam = 5., lr = 1e-3, tol = 1e-3): 
     optimizer = torch.optim.Adam(model.parameters(), lr = lr)
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    model = model.to(device)
     losses = []
     Time = 0
     for epoch in range(n_epochs):
         t0 = time.time()
-        xy_colloc = sample_collocation(N_colloc, params)
+        xy_colloc = sample_collocation(N_colloc, params).to(device)
         xy_inner, xy_outer = sample_boundary(N_bord, params)
+        xy_inner = xy_inner.to(device)
+        xy_outer = xy_outer.to(device)
         
         XX = xy_colloc[:, 0:1]
         YY = xy_colloc[:, 1:2]
@@ -56,6 +60,13 @@ def train(model, params, f, N_colloc = 200, N_bord = 50, n_epochs = 1000, lam = 
         t1 = time.time()
         losses.append(loss.item())
         Time += (t1-t0)
-        #if epoch % 50 == 0: 
-            #print(f"epoch {epoch: 5d}|loss = {loss.item():.3e} | time = {Time}")
+        patience = n_epochs / 2
+        if epoch > 2 * patience:
+            mean_before = np.mean(losses[-2*patience : -patience])
+            mean_after  = np.mean(losses[-patience:])
+            decrease    = (mean_before - mean_after) / (mean_before + 1e-12)
+            if decrease < tol:
+                print(f"  Early stopping à l'epoch {epoch} "
+                      f"(amélioration relative = {decrease:.2e} < {tol})")
+                break
     return losses, Time

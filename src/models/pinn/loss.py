@@ -29,16 +29,21 @@ def loss_pde(model, xy_colloc, f_vals, vc_valls, params):
 
     return (operateur_F(ux, uy, uxx, uyy, vc_valls, params, torch)-f_vals).pow(2).mean()
 
-def loss_inner(model, xy_inner): 
+def loss_inner(model, xy_inner, which = 2): 
     """
     prend en entrée le nn, les points sur le cercle interieur, et renvoie 
     la pénalisation en norme 2, u = 0 a l'interieur
     """
-    u = model(xy_inner)
-    norm_u = u.pow(2).mean()
+    if which == 2:
+        u = model(xy_inner)
+        norm_u = u.pow(2).mean()
+    elif which == .5:
+        u = model(xy_inner)
+        norm_u = u.pow(2).mean()
+        norm_u += 1#### 
     return norm_u
 
-def loss_outer(model, xy_outer):
+def loss_outer(model, xy_outer, which = 2):
     """
     prend en entrée le nn, les points sur le cercle exterieur, et renvoie 
     la pénalisation en norme 2, u = 1 a l'exterieur
