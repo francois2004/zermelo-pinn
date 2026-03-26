@@ -32,12 +32,12 @@ def compute_f_exact(XX, YY, params,xp = np, hx=1e-5, hy=1e-5 ):
     uxx = -c**2 * xp.sin(0.5*xp.pi*phi) * (2*XX)**2 + c * xp.cos(0.5*xp.pi*phi) * 2
     uyy = -c**2 * xp.sin(0.5*xp.pi*phi) * (2*YY)**2 + c * xp.cos(0.5*xp.pi*phi) * 2
 
-    norm2 = xp.sqrt(ux**2 + uy**2)
-    norm1 = xp.abs(ux) + xp.abs(uy)
+    norm2 = xp.sqrt(ux**2 +params.sig_y* uy**2)
+    norm1 = xp.abs(params.sig_x*ux) + xp.abs(params.sig_y*uy)
 
     VC = vc_field(XX,YY,params, xp)
 
-    # f = -1/2 σx² uxx - 1/2 σy² uyy - vc*ux + vs*||∇u||_2 - κ*||∇u||_1
+    # f = -1/2 σx² uxx - 1/2 σy² uyy - vc*ux + vs*||∇u||_2 - κ*||sig * ∇u||_1
     f = (- 0.5*params.sig_x**2 * uxx
          - 0.5*params.sig_y**2 * uyy
          - VC * ux

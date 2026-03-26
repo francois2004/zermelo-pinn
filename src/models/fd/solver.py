@@ -38,7 +38,7 @@ def build_system(XX, YY, U, N, f, params, fd_ops) :
     ## termes en alpha
     A = A + params.vs * (sparse.diags(ax)@ux + sparse.diags(ay)@uy)
     ## termes en beta
-    A = A - params.kappa * (sparse.diags(bx) @ ux + sparse.diags(by)@uy)
+    A = A - params.kappa * (sparse.diags(bx) @ (params.sig_x*ux) + sparse.diags(by)@(params.sig_y*uy))
 
     ## second membre 
     B = f(XX,YY, params).flatten()
@@ -59,13 +59,13 @@ def build_system(XX, YY, U, N, f, params, fd_ops) :
     
     return A, B
 
-def Solveur_Zermelo (N, f,params, tol = 1e-6, max_iter = 100):
+def Solveur_Zermelo (N, f,params, tol = 1e-4, max_iter = 100):
     """
     prends en entrées les paramètres du problème, la grille, le fonction, et 
     renvoie la solution approchée par méthode de Newton
     """
     xx, yy =np.linspace(params.X_min, params.X_max, N+1), np.linspace(params.Y_min, params.Y_max, N+1 )
-    XX, YY = np.meshgrid(xx, yy)
+    XX, YY = np.meshgrid(xx, yy, indexing='ij')
     mask_in, mask_pde, mask_out = make_masks(XX, YY, params)
     U_vec = np.zeros((N+1)*(N+1))
     ##initialiser les bords : 
@@ -75,19 +75,12 @@ def Solveur_Zermelo (N, f,params, tol = 1e-6, max_iter = 100):
 
     for n in range(max_iter):
         A,B = build_system( XX, YY,U_vec, N,f, params, ops_dict)
-        ux = ops_dict['Dx'] @ U_vec
-        uy = ops_dict['Dy'] @ U_vec
-        F = A@U_vec - B
-
-        dax_dU, day_dU = ops.d_u_alpha(ux, uy, N, N, params)
-
-        J = A + params.vs * ( sparse.diags(ux) @ dax_dU + sparse.diags(uy) @ day_dU )
-        U_next = lng.spsolve(J,-F)
+        U_next = lng.spsolve(A,B)
 
         err = np.max(np.abs(U_next - U_vec))
-        U_vec += U_next
+        U_vec = U_next
         if err < tol: 
             break
     U = U_vec.reshape(N+1, N+1)
-    U[~mask_pde] = np.nan
+    #U[~mask_pde] = np.nan
     return U, XX, YY 

@@ -89,18 +89,17 @@ def alpha(ux, uy ):
     norm = np.where(norm == 0, 1, norm)
     return ux/norm, uy/norm
 
-def d_u_apha(ux,uy, Nx, Ny, params): 
+def d_u_alpha(ux,uy, Nx, Ny, params, ops_dict): 
     """
     Calcul de la dérivée en u de alpha pour la Jacobienne de la méthode de Newton Semi-Smooth
     """
-    fd_ops = build_fd_operators(Nx, Ny, params)
-    Dx, Dy = fd_ops['Dx'], fd_ops['Dy']
+    Dx, Dy = ops_dict['Dx'], ops_dict['Dy']
     norm = np.sqrt(ux**2 + uy**2)
-    norm = np.where(norm == 0, 1.0, norm)
+    norm_safe = np.where(norm == 0, 1.0, norm)
 
-    inv_norm  = sparse.diags(1.0 / norm)           
-    ux_n3     = sparse.diags(ux / norm**3)        
-    uy_n3     = sparse.diags(uy / norm**3)        
+    inv_norm  = sparse.diags(1.0 / norm_safe)           
+    ux_n3     = sparse.diags(ux / (norm_safe**3+1e-8))        
+    uy_n3     = sparse.diags(uy / (norm_safe**3+1e-8))        
 
     grad_proj = sparse.diags(ux) @ Dx + sparse.diags(uy) @ Dy
     dax_dU = inv_norm @ Dx - ux_n3 @ grad_proj  
